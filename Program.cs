@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using NeuralLoop.Network;
 
 namespace NeuralLoop
 {
@@ -10,6 +8,9 @@ namespace NeuralLoop
     {
         static void Main(string[] args)
         {
+            int[] neuronNumbers = new int[] { 100000, 100000, 100000 };
+            int[] synapseNumbers = new int[] { 700, 700, 700 };
+            NeuralNetwork nn = new NeuralNetwork(neuronNumbers, synapseNumbers);
         }
     }
 }

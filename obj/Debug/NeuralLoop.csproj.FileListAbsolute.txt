@@ -1,1 +1,0 @@
-D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\NeuralLoop.exe.config
