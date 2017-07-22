@@ -98,12 +98,14 @@ namespace NeuralLoop.Network
         public NeuralNetwork(int[] neuronNumbers, int[] expectedSynapses) : this(neuronNumbers, expectedSynapses, new bool[neuronNumbers.Length - 1]) {}
 
         /// <summary>
-        /// 
+        /// Constructs the network based on neuronNumbers,
+        /// initializes the matrix and bias values with small random variables between randomMin and randomMax
         /// </summary>
         /// <param name="neuronNumbers">The array containing the neuron numbers in each layer (including the input)</param>
         public NeuralNetwork(int[] neuronNumbers) : this(neuronNumbers, null) {}
 
-        public void UnsupervisedTrain(Vector<float> input, float alpha)
+
+        public Vector<float> UnsupervisedLoop(Vector<float> input, float alpha)
         {
             int M = matrices.Length;
 
@@ -119,6 +121,13 @@ namespace NeuralLoop.Network
                 input = isLin[i] ? (matrices[i] * input) + biases[i] : VectorFunction.lsim((matrices[i] * input) + biases[i]);
             }
             midValues[M] = input.Clone();
+
+            for (int i = 0; i < matrices.Length; i++)
+            {
+                matrices[i] = matrices[i] + alpha * (Vector<float>.OuterProduct(midValues[i], midValues[i + 1]));
+            }
+
+            return input;
         }
 
 
