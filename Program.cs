@@ -8,9 +8,20 @@ namespace NeuralLoop
     {
         static void Main(string[] args)
         {
-            int[] neuronNumbers = new int[] { 100000, 100000, 100000 };
-            int[] synapseNumbers = new int[] { 700, 700, 700 };
-            NeuralNetwork nn = new NeuralNetwork(neuronNumbers, synapseNumbers);
+            Translator tr = new Translator();
+            /*List<string> synonims = tr.Synonyms("hope");
+            foreach (string s in synonims)
+            {
+                Console.WriteLine(s);
+            }*/
+
+            Console.WriteLine(tr.SpellChecker("something"));
+            Console.WriteLine(tr.SpellChecker("samething"));
+            Console.WriteLine(tr.SpellChecker("smething"));
+            Console.WriteLine(tr.SpellChecker("asdsomeasdthingasd"));
+
+
+            Console.Read();
         }
     }
 }
