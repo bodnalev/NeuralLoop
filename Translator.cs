@@ -8,7 +8,7 @@ namespace NeuralLoop
     
     class Translator
     {
-        public Dictionary<string, bool[]> collection;
+        public List<BinaryWord> collection;
 
         public void ReadPage()
         {
@@ -35,7 +35,7 @@ namespace NeuralLoop
 
         public void ReadFile()
         {
-            collection = new Dictionary<string, bool[]>();
+            collection = new List<BinaryWord>();
 
             using (StreamReader wordsReader = new StreamReader(@"words.txt"))
             {
@@ -53,7 +53,7 @@ namespace NeuralLoop
             }
         }
 
-        public string BaseWord(string word)
+        public BinaryWord GenerateBinaryWord(string word)
         {
             try
             {
@@ -64,7 +64,48 @@ namespace NeuralLoop
                 {
                     using (StreamReader dicReader = new StreamReader(dicRes.GetResponseStream()))
                     {
-                        return word;
+                        BinaryWord bw = new BinaryWord();
+                        bw.word = word;
+
+                        List<string> classes = new List<string>();
+
+                        string dicLine;
+                        bool normal = false, britDic = false;
+
+                        while ((dicLine = dicReader.ReadLine()) != null)
+                        {
+                            //Finds out the word classes
+                            if (dicLine.Contains("luna-data-header"))
+                            {
+                                dicLine = dicReader.ReadLine();
+                                try
+                                {
+                                    int start = dicLine.IndexOf("dbox-pg") + 9;
+                                    int end = dicLine.IndexOf('<', start);
+                                    string newWord = dicLine.Substring(start, end - start);
+                                    classes.Add(newWord.Split()[0]);
+                                }
+                                catch (Exception e)
+                                { }
+                            }
+
+                            if (!normal && dicLine.Contains("def-content"))
+                            {
+                                normal = true;
+                                Console.WriteLine(dicLine);
+                            }
+
+                            if (!britDic && dicLine.Contains("British Dictionary definitions for"))
+                            {
+                                normal = false;
+                                britDic = true;
+                            }
+
+                        }
+
+                        bw.SetClass(classes);
+
+
                     }
                 }
             }
@@ -89,7 +130,7 @@ namespace NeuralLoop
                                 string newWord = dicLine.Substring(start, end - start);
                                 if (!newWord.Contains("%"))
                                 {
-                                    return newWord;
+                                    return null;
                                 }
                             }
                         }
@@ -193,9 +234,62 @@ namespace NeuralLoop
             return res;
         }
 
-        class BinaryWord
+        public class BinaryWord
         {
+            public enum WordClass { Noun, Verb, AdjeAdve, DeterConjPrepPronInterjPuncUnkn }
+            public WordClass type;
+            
+            public string word;
 
+            private bool[] header; //2 size
+            private bool[] data; //18 size
+            private bool[] complete; //20 size
+
+            public void SetClass(List<string> classes)
+            {
+                if (classes.Contains("determiner") || classes.Contains("conjunction") ||
+                    classes.Contains("preposition") || classes.Contains("pronoun"))
+                {
+                    type = WordClass.DeterConjPrepPronInterjPuncUnkn;
+                    header = new bool[] { true, true };
+                    Console.WriteLine("1st DeterConjPrepPron  InterjPuncUnkn");
+                    return;
+                }
+                for (int i = 0; i < classes.Count; i++)
+                {
+                    if (classes[i] == "noun")
+                    {
+                        type = WordClass.Noun;
+                        header = new bool[] {true, false};
+                        Console.WriteLine(classes[i]);
+                        return;
+                    }
+                    if (classes[i] == "verb")
+                    {
+                        type = WordClass.Verb;
+                        header = new bool[] {false, true };
+                        Console.WriteLine(classes[i]);
+                        return;
+                    }
+                    if (classes[i] == "adjective" || classes[i] == "adverb")
+                    {
+                        type = WordClass.AdjeAdve;
+                        header = new bool[] { false, false };
+                        Console.WriteLine(classes[i]);
+                        return;
+                    }
+                    if (classes[i] == "interjection")
+                    {
+                        type = WordClass.DeterConjPrepPronInterjPuncUnkn;
+                        header = new bool[] { true, true };
+                        Console.WriteLine(classes[i]);
+                        return;
+                    }
+                }
+                type = WordClass.DeterConjPrepPronInterjPuncUnkn;
+                header = new bool[] { true, true };
+                Console.WriteLine("last Unkn from DeterConjPrepPronInterjPuncUnkn");
+            }
         }
     }
 }

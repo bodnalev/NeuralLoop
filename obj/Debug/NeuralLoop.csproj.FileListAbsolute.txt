@@ -7,3 +7,4 @@ D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.csprojResolveAs
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.exe
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.pdb
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\words.txt
+D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\dictionary.txt

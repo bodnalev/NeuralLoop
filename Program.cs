@@ -10,9 +10,8 @@ namespace NeuralLoop
         static void Main(string[] args)
         {
             Translator tr = new Translator();
-            tr.ReadFile();
 
-
+            tr.GenerateBinaryWord("play");
 
             Console.Read();
         }
