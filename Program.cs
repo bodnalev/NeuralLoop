@@ -11,7 +11,7 @@ namespace NeuralLoop
         {
             Translator tr = new Translator();
 
-            tr.GenerateBinaryWord("play");
+            tr.GenerateBinaryWord("that");
 
             Console.Read();
         }
