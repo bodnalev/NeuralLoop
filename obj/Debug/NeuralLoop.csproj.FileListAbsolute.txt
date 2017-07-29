@@ -1,10 +1,9 @@
+D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\words.txt
+D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\dictionary.txt
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\NeuralLoop.exe.config
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\NeuralLoop.exe
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\NeuralLoop.pdb
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\MathNet.Numerics.dll
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\MathNet.Numerics.xml
-D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.csprojResolveAssemblyReference.cache
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.exe
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.pdb
-D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\words.txt
-D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\dictionary.txt

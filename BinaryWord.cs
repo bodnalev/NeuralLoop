@@ -115,7 +115,7 @@ namespace NeuralLoop
             catch (Exception e) { }
         }
         
-
+        
         //Functions
         //Public
         private void SetData(string def, WordClass type)
@@ -141,11 +141,17 @@ namespace NeuralLoop
                 bool[] oldData = defBinary.data;
                 if (!FindRandomlyDifferent(oldData, 10, 4, type, out randomData))
                 {
-                    if (!FindRandomlyDifferent(oldData, 20, 6, type, out randomData))
+                    if (!FindRandomlyDifferent(oldData, 20, 8, type, out randomData))
                     {
-                        if (!FindNextDifferent(oldData, 6, type, out randomData))
+                        if (!FindRandomlyDifferent(oldData, 40, 10, type, out randomData))
                         {
-                            throw new OutOfMemoryException();
+                            if (!FindNextDifferent(oldData, 8, type, out randomData))
+                            {
+                                if (!FindNextDifferent(18, 18, type, out randomData))
+                                {
+                                    throw new OutOfMemoryException();
+                                }
+                            }
                         }
                     }
                 }

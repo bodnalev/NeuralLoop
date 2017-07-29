@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Linq;
 
 namespace NeuralLoop
 {
@@ -29,7 +28,7 @@ namespace NeuralLoop
             collection = new Dictionary<string, BinaryWord>();
             nouns = new Dictionary<string, BinaryWord>();
             int num = 0;
-            using (StreamReader reader = new StreamReader(@"dictionary.txt"))
+            using (StreamReader reader = new StreamReader(@"D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\dictionary.txt"))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
@@ -51,7 +50,10 @@ namespace NeuralLoop
         /// </summary>
         public void ReadWordList()
         {
+
             LoadDictionary();
+
+
 
             using (StreamReader wordsReader = new StreamReader(@".\words.txt"))
             {
@@ -61,7 +63,7 @@ namespace NeuralLoop
                     while ((wordsLine = wordsReader.ReadLine()) != null)
                     {
                         string[] ar = wordsLine.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        BinaryWord bw = GenerateBinaryWord(ar[0]);
+                        BinaryWord bw = GenerateBinaryWord(ar[0], false);
                         if (bw != null && !collection.ContainsKey(bw.word))
                         {
                             collection.Add(bw.word, bw);
@@ -82,23 +84,19 @@ namespace NeuralLoop
         /// </summary>
         /// <param name="word">The BinaryWord will be the representative of this word</param>
         /// <returns>The returned BinaryWord </returns>
-        public BinaryWord GenerateBinaryWord(string word)
+        public BinaryWord GenerateBinaryWord(string word, bool sec)
         {
-            Console.WriteLine("GenerateBinaryWord: "+word);
             try
             {
                 HttpWebRequest dicReq = (HttpWebRequest)WebRequest.Create("http://www.dictionary.com/misspelling?term=" + word);
                 dicReq.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-
-                Console.WriteLine("Webrequest");
-
+                
                 using (HttpWebResponse dicRes = (HttpWebResponse)dicReq.GetResponse())
                 {
                     using (StreamReader dicReader = new StreamReader(dicRes.GetResponseStream()))
                     {
                         if (collection.ContainsKey(word))
                         {
-                            Console.WriteLine("contains key: "+word);
                             return null;
                         }
                         return BinaryWordFromReader(dicReader, word);
@@ -107,7 +105,10 @@ namespace NeuralLoop
             }
             catch (WebException ex)
             {
-                Console.WriteLine("exception, we look the response");
+                if (sec)
+                {
+                    return null;
+                }
                 if (ex.Response != null)
                 {
                     WebResponse res = ex.Response;
@@ -118,7 +119,6 @@ namespace NeuralLoop
                         {
                             if (dicLine.Contains("There are no results for:"))
                             {
-                                Console.WriteLine("no results for misspelling");
                                 return null;
                             }
                             if (dicLine.Contains("Did you mean"))
@@ -128,35 +128,35 @@ namespace NeuralLoop
                                 string newWord = dicLine.Substring(start, end - start);
                                 if (!newWord.Contains("%"))
                                 {
-                                    Console.WriteLine("New corrected word is: "+newWord);
                                     if (collection.ContainsKey(newWord))
                                     {
-                                        Console.WriteLine("alread in: "+newWord);
                                         return null;
                                     }
-                                    return GenerateBinaryWord(newWord);
+                                    return GenerateBinaryWord(newWord, true);
                                 }
                             }
                         }
                     }
                 }
             }
-            catch (Exception e)
+            /*catch (Exception e)
             {
-                Console.WriteLine("Exception occured in GenerateBinaryWord: " + e.Message);
-            }
+                Console.WriteLine("Exception occured in GenerateBinaryWord: ");
+                Console.WriteLine("Message: "+e.Message);
+                Console.WriteLine("Target Site: "+e.TargetSite);
+            }*/
 
             return null;
         }
         
         private BinaryWord BinaryWordFromReader(StreamReader dicReader, string word)
         {
-            Console.WriteLine("StreamReader called for analizing");
             string dicLine;
             bool britDic = false;
             bool firstDef = true;
-            string defWord = null;
+            string defLine = null, defWord = null;
             List<string> classes = new List<string>();
+            int length = 1;
 
             while ((dicLine = dicReader.ReadLine()) != null)
             {
@@ -164,7 +164,6 @@ namespace NeuralLoop
                 {
                     try
                     {
-                        Console.WriteLine("int the dbox-pg (class definition)");
                         int start = dicLine.IndexOf("dbox-pg") + 9;
                         int end = dicLine.IndexOf('<', start);
                         classes.Add(dicLine.Substring(start, end - start).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[0]);
@@ -174,38 +173,72 @@ namespace NeuralLoop
 
                 }
 
-                if ((firstDef || defWord == null) && dicLine.Contains("def-content"))
+                if (dicLine.Contains("def-content"))
                 {
-                    dicLine = dicReader.ReadLine();
-                    if (dicLine.Contains("def-sub-list"))
+                    if (!britDic && (!firstDef || defLine == null))
                     {
                         dicLine = dicReader.ReadLine();
-                    }
-
-                    Console.WriteLine("in the de-content (definition word line)");
-                    Console.WriteLine(dicLine);
-
-                    firstDef = false;
-
-                    string[] defSplit = dicLine.Split(new char[] { '>', '(', ')', ',', '.', ':', ';', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
-                    for (int i = 0; i < defSplit.Length; i++)
-                    {
-                        if (nouns.ContainsKey(defSplit[i]))
+                        if (dicLine.Contains("def-sub-list"))
                         {
-                            defWord = defSplit[i];
-                            break;
+                            dicLine = dicReader.ReadLine();
+                        }
+
+                        defLine = dicLine;
+
+                        firstDef = false;
+                    }
+                    if (britDic)
+                    {
+                        if (firstDef)
+                        {
+                            dicLine = dicReader.ReadLine();
+                            if (dicLine.Contains("def-sub-list"))
+                            {
+                                dicLine = dicReader.ReadLine();
+                            }
+
+                            defLine = dicLine;
+
+                            firstDef = false;
+                        }
+                        else if(length < 4)
+                        {
+                            dicLine = dicReader.ReadLine();
+                            if (dicLine.Contains("def-sub-list"))
+                            {
+                                dicLine = dicReader.ReadLine();
+                            }
+
+                            defLine += dicLine;
+                            length++;
                         }
                     }
                 }
 
                 if (!britDic && dicLine.Contains("British Dictionary definitions for"))
                 {
-                    Console.WriteLine("British dictionary separator");
+                    //Console.WriteLine("British dictionary separator");
                     britDic = true;
                     classes = new List<string>();
                     firstDef = true;
                 }
             }
+
+            try
+            {
+                string[] defSplit = defLine.Split(new char[] { '>', '(', ')', ',', '.', ':', ';', '!', '?', ' '}, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < defSplit.Length; i++)
+                {
+                    if (nouns.ContainsKey(defSplit[i]))
+                    {
+                        defWord = defSplit[i];
+                        break;
+                    }
+                }
+            }
+            catch (NullReferenceException ex)
+            {}
+            
 
             BinaryWord bw = new BinaryWord(word, BinaryWord.FindClass(classes), defWord);
             return bw;
@@ -290,7 +323,6 @@ namespace NeuralLoop
                     {
                         if (dicLine.Contains("no thesaurus results"))
                         {
-                            dicReader.Close();
                             return null;
                         }
                         if (dicLine.Contains("relevant-3") || dicLine.Contains("relevant-2"))

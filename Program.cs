@@ -7,10 +7,10 @@ namespace NeuralLoop
         static void Main(string[] args)
         {
             Translator tr = new Translator();
-            //tr.ReadWordList();
+            tr.ReadWordList();
 
-            tr.LoadDictionary();
-            tr.GenerateBinaryWord("rome");
+            //tr.LoadDictionary();
+            //tr.GenerateBinaryWord("days", false);
 
             //tr.GenerateBinaryWord("introduced");
 
