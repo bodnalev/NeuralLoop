@@ -62,6 +62,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinaryWord.cs" />
     <Compile Include="Network\NeuralNetwork.cs" />
     <Compile Include="Network\VectorFunction.cs" />
     <Compile Include="Program.cs" />
@@ -73,9 +74,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="dictionary.txt">
+    <None Include="dictionary.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
     <Content Include="words.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using NeuralLoop.Network;
 
 namespace NeuralLoop
 {
@@ -10,8 +7,12 @@ namespace NeuralLoop
         static void Main(string[] args)
         {
             Translator tr = new Translator();
+            //tr.ReadWordList();
 
-            tr.GenerateBinaryWord("that");
+            tr.LoadDictionary();
+            tr.GenerateBinaryWord("rome");
+
+            //tr.GenerateBinaryWord("introduced");
 
             Console.Read();
         }

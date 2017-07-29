@@ -6,75 +6,108 @@ using System.Linq;
 
 namespace NeuralLoop
 {
-    
+    /// <summary>
+    /// Creates the link between the english words and words available for the program
+    /// </summary>
     class Translator
     {
-        public static List<BinaryWord> collection;
+        /// <summary>
+        /// Stores the words in this list
+        /// </summary>
+        public static Dictionary<string, BinaryWord> collection;
+        /// <summary>
+        /// Stores the nouns (they are special as they are used in the definitions)
+        /// </summary>
         public static Dictionary<string, BinaryWord> nouns;
         
-        private void LoadDictionary()
+
+        /// <summary>
+        /// Loads the words from the dictionary.txt
+        /// </summary>
+        public void LoadDictionary()
         {
-            collection = new List<BinaryWord>();
+            collection = new Dictionary<string, BinaryWord>();
             nouns = new Dictionary<string, BinaryWord>();
+            int num = 0;
             using (StreamReader reader = new StreamReader(@"dictionary.txt"))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
                     BinaryWord bw = new BinaryWord(line);
-                    collection.Add(bw);
+                    collection.Add(bw.word, bw);
                     if (bw.type == BinaryWord.WordClass.Noun)
                     {
                         nouns.Add(bw.word, bw);
                     }
+                    num++;
                 }
             }
+            Console.WriteLine("Loaded " + num + " words from dictionary.txt");
         }
 
-        public void ReadFile()
+        /// <summary>
+        /// Reads the words.txt to extend the dictionary.txt with the generated BinaryWords
+        /// </summary>
+        public void ReadWordList()
         {
             LoadDictionary();
 
-            using (StreamReader wordsReader = new StreamReader(@"words.txt"))
+            using (StreamReader wordsReader = new StreamReader(@".\words.txt"))
             {
-                using (StreamWriter writer = new StreamWriter(@"dictionary.txt"))
+                using (StreamWriter writer = new StreamWriter(@"D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\dictionary.txt", true))
                 {
                     string wordsLine;
                     while ((wordsLine = wordsReader.ReadLine()) != null)
                     {
                         string[] ar = wordsLine.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         BinaryWord bw = GenerateBinaryWord(ar[0]);
-                        if (bw != null)
+                        if (bw != null && !collection.ContainsKey(bw.word))
                         {
-                            collection.Add(bw);
+                            collection.Add(bw.word, bw);
                             if (bw.type == BinaryWord.WordClass.Noun)
                             {
                                 nouns.Add(bw.word, bw);
                             }
                             writer.WriteLine(bw.ToString());
+                            writer.Flush();
                         }
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Generates a BinaryWord from a given word
+        /// </summary>
+        /// <param name="word">The BinaryWord will be the representative of this word</param>
+        /// <returns>The returned BinaryWord </returns>
         public BinaryWord GenerateBinaryWord(string word)
         {
+            Console.WriteLine("GenerateBinaryWord: "+word);
             try
             {
                 HttpWebRequest dicReq = (HttpWebRequest)WebRequest.Create("http://www.dictionary.com/misspelling?term=" + word);
                 dicReq.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
 
+                Console.WriteLine("Webrequest");
+
                 using (HttpWebResponse dicRes = (HttpWebResponse)dicReq.GetResponse())
                 {
                     using (StreamReader dicReader = new StreamReader(dicRes.GetResponseStream()))
                     {
+                        if (collection.ContainsKey(word))
+                        {
+                            Console.WriteLine("contains key: "+word);
+                            return null;
+                        }
                         return BinaryWordFromReader(dicReader, word);
                     }
                 }
             }
             catch (WebException ex)
             {
+                Console.WriteLine("exception, we look the response");
                 if (ex.Response != null)
                 {
                     WebResponse res = ex.Response;
@@ -85,6 +118,7 @@ namespace NeuralLoop
                         {
                             if (dicLine.Contains("There are no results for:"))
                             {
+                                Console.WriteLine("no results for misspelling");
                                 return null;
                             }
                             if (dicLine.Contains("Did you mean"))
@@ -94,6 +128,12 @@ namespace NeuralLoop
                                 string newWord = dicLine.Substring(start, end - start);
                                 if (!newWord.Contains("%"))
                                 {
+                                    Console.WriteLine("New corrected word is: "+newWord);
+                                    if (collection.ContainsKey(newWord))
+                                    {
+                                        Console.WriteLine("alread in: "+newWord);
+                                        return null;
+                                    }
                                     return GenerateBinaryWord(newWord);
                                 }
                             }
@@ -108,25 +148,26 @@ namespace NeuralLoop
 
             return null;
         }
-
-        public BinaryWord BinaryWordFromReader(StreamReader dicReader, string word)
+        
+        private BinaryWord BinaryWordFromReader(StreamReader dicReader, string word)
         {
+            Console.WriteLine("StreamReader called for analizing");
             string dicLine;
             bool britDic = false;
-            bool firstClass = true, firstDef = true;
-            string className = null, defWord = null;
+            bool firstDef = true;
+            string defWord = null;
+            List<string> classes = new List<string>();
 
             while ((dicLine = dicReader.ReadLine()) != null)
             {
-                if (firstClass && dicLine.Contains("dbox-pg"))
+                if (dicLine.Contains("dbox-pg"))
                 {
                     try
                     {
+                        Console.WriteLine("int the dbox-pg (class definition)");
                         int start = dicLine.IndexOf("dbox-pg") + 9;
                         int end = dicLine.IndexOf('<', start);
-                        className = dicLine.Substring(start, end - start);
-
-                        firstClass = false;
+                        classes.Add(dicLine.Substring(start, end - start).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[0]);
                     }
                     catch (Exception e)
                     { }
@@ -140,6 +181,9 @@ namespace NeuralLoop
                     {
                         dicLine = dicReader.ReadLine();
                     }
+
+                    Console.WriteLine("in the de-content (definition word line)");
+                    Console.WriteLine(dicLine);
 
                     firstDef = false;
 
@@ -156,18 +200,22 @@ namespace NeuralLoop
 
                 if (!britDic && dicLine.Contains("British Dictionary definitions for"))
                 {
+                    Console.WriteLine("British dictionary separator");
                     britDic = true;
-                    firstClass = true;
+                    classes = new List<string>();
                     firstDef = true;
                 }
             }
 
-            Console.WriteLine("Word: " + word + "\t Class: " + className + "\t Definition: " + defWord);
-
-            BinaryWord bw = new BinaryWord(word, className, defWord);
+            BinaryWord bw = new BinaryWord(word, BinaryWord.FindClass(classes), defWord);
             return bw;
         }
 
+        /// <summary>
+        /// Checks spelling mistakes
+        /// </summary>
+        /// <param name="word">The word we want to check</param>
+        /// <returns>The correct word, null if we can not find any</returns>
         public string SpellChecker(string word)
         {
             try
@@ -219,6 +267,11 @@ namespace NeuralLoop
             return null;
         }
         
+        /// <summary>
+        /// Finds a list of synonims
+        /// </summary>
+        /// <param name="word">The original word</param>
+        /// <returns>The list returned</returns>
         public List<string> Synonyms(string word)
         {
             List<string> res = new List<string>();
@@ -255,209 +308,6 @@ namespace NeuralLoop
             }
             return res;
         }
-
-        public class BinaryWord
-        {
-            public enum WordClass { Noun, Verb, AdjeAdve, DeterConjPrepPronInterjPuncUnkn }
-            public WordClass type;
-            
-            //Variables
-            public string word;
-            public int dataNumber = 0;
-
-            public bool[] header; //2 size
-            public bool[] data; //18 size
-            public bool[] complete; //20 size
-            
-
-            //Constructors
-            public BinaryWord(string word, string wordClass, string defWord)
-            {
-                this.word = word;
-                switch (wordClass)
-                {
-                    case "noun":
-                        type = WordClass.Noun;
-                        header = new bool[] { true, false };
-                        break;
-                    case "verb":
-                        type = WordClass.Verb;
-                        header = new bool[] { false, true };
-                        break;
-                    case "adjective":
-                    case "adverb":
-                        type = WordClass.AdjeAdve;
-                        header = new bool[] { false, false };
-                        break;
-                    default:
-                        type = WordClass.DeterConjPrepPronInterjPuncUnkn;
-                        header = new bool[] { true, true };
-                        break;
-                }
-
-                SetData(defWord, type);
-
-                dataNumber = GetNumberFromData(data);
-
-                complete = Concate(header, data);
-            }
-
-            public BinaryWord(string source)
-            {
-                try
-                {
-                    string[] spl = source.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    word = spl[0];
-                    dataNumber = int.Parse(spl[1]);
-                    data = GetDataFromNumber(dataNumber);
-
-                    switch (spl[3])
-                    {
-                        case "10":
-                            type = WordClass.Noun;
-                            header = new bool[] { true, false };
-                            break;
-                        case "01":
-                            type = WordClass.Verb;
-                            header = new bool[] { false, true };
-                            break;
-                        case "00":
-                            type = WordClass.AdjeAdve;
-                            header = new bool[] { false, false };
-                            break;
-                        default:
-                            type = WordClass.DeterConjPrepPronInterjPuncUnkn;
-                            header = new bool[] { true, true };
-                            break;
-                    }
-                    complete = Concate(header, data);
-                }
-                catch (Exception e){}
-            }
-
-
-            //Functions
-            private void SetData(string def, WordClass type)
-            {
-                BinaryWord defBinary;
-                if (def == null || nouns.TryGetValue(def, out defBinary))
-                {
-                    bool[] randomData;
-                    if (!FindRandomlyDifferent(10, 18, 14, type, out randomData))
-                    {
-                        if (!FindRandomlyDifferent(10, 18, 16, type, out randomData))
-                        {
-                            if (!FindNextDifferent(18, 16, type, out randomData))
-                            {
-                                throw new OutOfMemoryException();
-                            }
-                        }
-                    }
-                    data = randomData;
-                }
-                else
-                {
-                    
-                }
-            }
-
-            private bool[] Concate(bool[] first, bool[] second)
-            {
-                bool[] ret = new bool[first.Length + second.Length];
-                first.CopyTo(ret, 0);
-                second.CopyTo(ret, first.Length);
-                return ret;
-            }
-
-            private bool FindNextDifferent(int length, int differentPart, WordClass type, out bool[] data)
-            {
-                data = new bool[length];
-                for (int i = 0; i < (int)Math.Pow(2, length); i++)
-                {
-                    data = GetDataFromNumber(i);
-                    if (SameAll(data, differentPart, type))
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            private bool FindRandomlyDifferent(int attempts, int length, int differentPart, WordClass type, out bool[] data)
-            {
-                int attempt = 0;
-                do
-                {
-                    attempt++;
-                    data = GetRandom(length);
-                }
-                while (attempt < attempts && !SameAll(data, differentPart, type));
-                if (attempt == attempts)
-                {
-                    return false;
-                }
-                return true;
-            }
-
-            private bool[] GetRandom(int length)
-            {
-                Random r = new Random();
-                bool[] ret = new bool[length];
-                for (int i = 0; i < ret.Length; i++)
-                {
-                    ret[i] = r.NextDouble() >= 0.5f;
-                }
-                return ret;
-            }
-
-            private bool SameUntil(bool[] data1, bool[] data2, int digits)
-            {
-                for (int i = 0; i < data1.Length && i <= digits && i<data2.Length; i++)
-                {
-                    if (data1[i] != data2[i])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            private bool SameAll(bool[] data, int digits, WordClass type)
-            {
-                foreach (BinaryWord bw in collection)
-                {
-                    if (SameUntil(data, bw.data, digits) && type == bw.type)
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            private bool[] GetDataFromNumber(int number)
-            {
-                return Convert.ToString(number, 2).PadLeft(18, '0').Select(s => s.Equals('1')).ToArray();
-            }
-
-            private int GetNumberFromData(bool[] data)
-            {
-                int mul = 1;
-                int res = 0;
-                for (int i = 0; i < data.Length; i++)
-                {
-                    if (data[i])
-                    {
-                        res += mul;
-                    }
-                    mul *= 2;
-                }
-                return res;
-            }
-            
-            public override string ToString()
-            {
-                return word + " " + dataNumber + " " + (header[0] ? '1' : '0') + (header[1] ? '1' : '0');
-            }
-        }
+        
     }
 }
