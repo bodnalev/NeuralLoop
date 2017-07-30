@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace NeuralLoop.Network
 {
     /// <summary>
-    /// Represents all the Neural Networks
+    /// Represent the Neural Networks
     /// </summary>
     class NeuralNetwork
     {
@@ -17,16 +17,11 @@ namespace NeuralLoop.Network
         /// <summary>
         /// Stores the matrices for each layer
         /// </summary>
-        public Matrix<float>[] matrices;
+        public Matrix<short>[] matrices;
         /// <summary>
         /// Stores the biases for each layer
         /// </summary>
-        public Vector<float>[] biases;
-
-        /// <summary>
-        /// True at [i] if the ith layer uses the lin transfer function
-        /// </summary>
-        public bool[] isLin;
+        public Vector<short>[] biases;
 
         /// <summary>
         /// Network parameters for randomizing the values
@@ -47,9 +42,9 @@ namespace NeuralLoop.Network
         /// <param name="neuronNumbers">The array containing the neuron numbers in each layer (including the input)</param>
         /// <param name="expectedSynapses">The expected synapse number in each neuron per layer</param>
         /// <param name="isLin">The array storing wether each layer uses the linear transfer function</param>
-        public NeuralNetwork(int[] neuronNumbers, int[] expectedSynapses, bool[] isLin)
+        public NeuralNetwork(int[] neuronNumbers, int[] expectedSynapses)
         {
-            ContinuousUniform rand = new ContinuousUniform(randomMin, randomMax);
+            ContinuousUniform ran = new ContinuousUniform(randomMin*100, randomMax*100);
             Bernoulli ber;
             this.neuronNumbers = neuronNumbers;
             this.expectedSynapses = expectedSynapses;
@@ -68,35 +63,22 @@ namespace NeuralLoop.Network
                 }
             }
 
-            matrices = new Matrix<float>[neuronNumbers.Length - 1];
-            biases = new Vector<float>[neuronNumbers.Length - 1];
-            this.isLin = new bool[neuronNumbers.Length - 1];
-            for (int i = 0; i < isLin.Length && i < this.isLin.Length; i++)
-            {
-                this.isLin[i] = isLin[i];
-            }
+            matrices = new Matrix<short>[neuronNumbers.Length - 1];
+            biases = new Vector<short>[neuronNumbers.Length - 1];
 
             for (int i = 0; i < neuronNumbers.Length - 1; i++)
             {
-                matrices[i] = Matrix<float>.Build.Random(neuronNumbers[i + 1], neuronNumbers[i], rand);
+                matrices[i] = Matrix<short>.Build.Random(neuronNumbers[i + 1], neuronNumbers[i], ran);
                 if (synapseProbability[i] < 1)
                 {
                     ber = new Bernoulli(synapseProbability[i]);
                     matrices[i].CoerceZero(x => ber.Sample()==0 );
                 }
 
-                biases[i] = Vector<float>.Build.Random(neuronNumbers[i + 1], rand);
+                biases[i] = Vector<short>.Build.Random(neuronNumbers[i + 1], ran);
             }
         }
-
-        /// <summary>
-        /// Constructs the network based on neuronNumbers,
-        /// initializes the matrix and bias values with small random variables between randomMin and randomMax
-        /// </summary>
-        /// <param name="neuronNumbers">The array containing the neuron numbers in each layer (including the input)</param>
-        /// <param name="expectedSynapses">The expected synapse number in each neuron per layer</param>
-        public NeuralNetwork(int[] neuronNumbers, int[] expectedSynapses) : this(neuronNumbers, expectedSynapses, new bool[neuronNumbers.Length - 1]) {}
-
+        
         /// <summary>
         /// Constructs the network based on neuronNumbers,
         /// initializes the matrix and bias values with small random variables between randomMin and randomMax
@@ -105,7 +87,7 @@ namespace NeuralLoop.Network
         public NeuralNetwork(int[] neuronNumbers) : this(neuronNumbers, null) {}
 
 
-        public Vector<float> UnsupervisedLoop(Vector<float> input, float alpha)
+        public Vector<short> UnsupervisedLoop(Vector<short> input, short alpha)
         {
             int M = matrices.Length;
 
@@ -113,39 +95,35 @@ namespace NeuralLoop.Network
              * Calculate the mid values, the response of each layer between the first and last
              * to use this in the training
              */
-            Vector<float>[] midValues = new Vector<float>[M + 1];
+            Vector<short>[] midValues = new Vector<short>[M + 1];
 
             for (int i = 0; i < M; i++)
             {
                 midValues[i] = input.Clone();
-                input = isLin[i] ? (matrices[i] * input) + biases[i] : VectorFunction.lsim((matrices[i] * input) + biases[i]);
+                input = VectorFunction.lStep((matrices[i] * input) / 100) + biases[i];
             }
             midValues[M] = input.Clone();
 
             for (int i = 0; i < matrices.Length; i++)
             {
-                matrices[i] = matrices[i] + alpha * (Vector<float>.OuterProduct(midValues[i], midValues[i + 1]));
+                matrices[i] = matrices[i] + alpha * (Vector<short>.OuterProduct(VectorFunction.Rem50(midValues[i]), VectorFunction.Rem50(midValues[i + 1])) / 100);
             }
 
             return input;
         }
 
-
+        /*
         /// <summary>
         /// Trains the network with the given input/output pairs
         /// </summary>
         /// <param name="input">The input vector</param>
         /// <param name="output">The expected output vector</param>
         /// <param name="alpha">The training parameter</param>
-        public void SupervisedBPTrain(Vector<float> input, Vector<float> output, float alpha)
+        public void SupervisedBPTrain(Vector<short> input, Vector<short> output, short alpha)
         {
             int M = matrices.Length;
-
-            /*
-             * Calculate the mid values, the response of each layer between the first and last
-             * to use this in the backpropagation
-             */
-            Vector<float>[] midValues = new Vector<float>[M + 1];
+            
+            Vector<short>[] midValues = new Vector<short>[M + 1];
 
             for (int i = 0; i < M; i++)
             {
@@ -154,26 +132,20 @@ namespace NeuralLoop.Network
             }
             midValues[M] = input.Clone();
 
-
-            /*
-             * Calculate the sensitivities backwards, using the midValues
-             */
-            Vector<float>[] sens = new Vector<float>[M];
+            
+            Vector<short>[] sens = new Vector<short>[M];
 
             sens[M - 1] = -2 * VectorFunction.diffSimp(midValues[M]).PointwiseMultiply(output - midValues[M]);
             for (int i = M - 2; i >= 0; i--)
             {
                 sens[i] = (isLin[i] ?
                     //If the transfer function is linear then use the identity diagonal matrix
-                    Matrix<float>.Build.DiagonalIdentity(midValues[i + 1].Count) :
+                    Matrix<short>.Build.DiagonalIdentity(midValues[i + 1].Count) :
                     //If the transfer function is log-sigmoid then use the diffSimp to calculate the derivative
-                    Matrix<float>.Build.Diagonal((VectorFunction.diffSimp(midValues[i + 1])).ToArray()))
+                    Matrix<short>.Build.Diagonal((VectorFunction.diffSimp(midValues[i + 1])).ToArray()))
                     * (matrices[i + 1].Transpose()) * sens[i + 1];
             }
-
-            /*
-             * Modify the matrix and bias elements
-             */
+            
 
             for (int i = 0; i < M; i++)
             {
@@ -181,18 +153,20 @@ namespace NeuralLoop.Network
                 biases[i] = biases[i] - alpha * sens[i];
             }
 
-        }
+        }*/
 
+        
+        
         /// <summary>
         /// Calculates the response of the network for a given input
         /// </summary>
         /// <param name="input">The given input</param>
         /// <returns></returns>
-        public Vector<float> Response(Vector<float> input)
+        public Vector<short> Response(Vector<short> input)
         {
             for (int i = 0; i < matrices.Length; i++)
             {
-                input = isLin[i] ? (matrices[i] * input) + biases[i] : VectorFunction.lsim((matrices[i] * input) + biases[i]);
+                input = VectorFunction.lStep((matrices[i] * input)/100) + biases[i];
             }
             return input;
         }
@@ -203,31 +177,30 @@ namespace NeuralLoop.Network
         /// <param name="extra">The extra neurons</param>
         /// <param name="atLayer">The layer to extend</param>
         /// <param name="defValue">The default value to fill</param>
-        public void ExtendAt(int extra, int atLayer, float defValue)
+        public void ExtendAt(int extra, int atLayer, short defValue)
         {
             ContinuousUniform rand = new ContinuousUniform(randomMin, randomMax);
             neuronNumbers[atLayer] += extra;
 
-            Matrix<float> newMatrix;
+            Matrix<short> newMatrix;
 
             if (atLayer > 0)
             {
-                Vector<float> newBias = Vector<float>.Build.Random(neuronNumbers[atLayer], rand);
+                Vector<short> newBias = Vector<short>.Build.Random(neuronNumbers[atLayer], rand);
                 newBias.SetSubVector(0, biases[atLayer - 1].Count, biases[atLayer - 1]);
                 biases[atLayer - 1] = newBias;
 
-                newMatrix = Matrix<float>.Build.Random(neuronNumbers[atLayer - 1], neuronNumbers[atLayer], rand);
+                newMatrix = Matrix<short>.Build.Random(neuronNumbers[atLayer - 1], neuronNumbers[atLayer], rand);
                 newMatrix.SetSubMatrix(0, 0, matrices[atLayer - 1]);
                 matrices[atLayer - 1] = newMatrix;
             }
 
             if (atLayer < matrices.Length)
             {
-                newMatrix = Matrix<float>.Build.Random(neuronNumbers[atLayer], neuronNumbers[atLayer + 1], rand);
+                newMatrix = Matrix<short>.Build.Random(neuronNumbers[atLayer], neuronNumbers[atLayer + 1], rand);
                 newMatrix.SetSubMatrix(0, 0, matrices[atLayer]);
                 matrices[atLayer] = newMatrix;
             }
-
         }
 
     }

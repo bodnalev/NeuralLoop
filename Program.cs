@@ -9,11 +9,6 @@ namespace NeuralLoop
             Translator tr = new Translator();
             tr.ReadWordList();
 
-            //tr.LoadDictionary();
-            //tr.GenerateBinaryWord("days", false);
-
-            //tr.GenerateBinaryWord("introduced");
-
             Console.Read();
         }
     }

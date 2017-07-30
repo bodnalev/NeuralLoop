@@ -23,11 +23,12 @@ namespace NeuralLoop
         /// <summary>
         /// Loads the words from the dictionary.txt
         /// </summary>
-        public void LoadDictionary()
+        public string LoadDictionary()
         {
             collection = new Dictionary<string, BinaryWord>();
             nouns = new Dictionary<string, BinaryWord>();
             int num = 0;
+            string last = "";
             using (StreamReader reader = new StreamReader(@"D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\dictionary.txt"))
             {
                 string line;
@@ -39,10 +40,13 @@ namespace NeuralLoop
                     {
                         nouns.Add(bw.word, bw);
                     }
+                    last = bw.word;
                     num++;
                 }
             }
-            Console.WriteLine("Loaded " + num + " words from dictionary.txt");
+            Console.WriteLine("Loaded " + num + " words from dictionary.txt \n" +
+                "Last word is: " + last);
+            return last;
         }
 
         /// <summary>
@@ -50,20 +54,31 @@ namespace NeuralLoop
         /// </summary>
         public void ReadWordList()
         {
-
-            LoadDictionary();
-
-
+            string lastWord = LoadDictionary();
 
             using (StreamReader wordsReader = new StreamReader(@".\words.txt"))
             {
                 using (StreamWriter writer = new StreamWriter(@"D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\dictionary.txt", true))
                 {
                     string wordsLine;
+                    bool alreadyIn = true;
                     while ((wordsLine = wordsReader.ReadLine()) != null)
                     {
                         string[] ar = wordsLine.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        BinaryWord bw = GenerateBinaryWord(ar[0], false);
+                        string currWord = ar[0].ToLower();
+
+                        Console.WriteLine("CW: " + currWord);
+
+                        if (currWord.Equals(lastWord) || lastWord.Equals(""))
+                        {
+                            alreadyIn = false;
+                        }
+
+                        if (alreadyIn)
+                        {
+                            continue;
+                        }
+                        BinaryWord bw = GenerateBinaryWord(currWord, false);
                         if (bw != null && !collection.ContainsKey(bw.word))
                         {
                             collection.Add(bw.word, bw);
@@ -125,7 +140,7 @@ namespace NeuralLoop
                             {
                                 int start = dicLine.IndexOf("com/browse/") + 11;
                                 int end = dicLine.IndexOf('"', start - 2);
-                                string newWord = dicLine.Substring(start, end - start);
+                                string newWord = dicLine.Substring(start, end - start).ToLower();
                                 if (!newWord.Contains("%"))
                                 {
                                     if (collection.ContainsKey(newWord))

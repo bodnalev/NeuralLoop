@@ -11,12 +11,45 @@ namespace NeuralLoop.Network
     class VectorFunction
     {
 
+        public static Vector<short> Rem50(Vector<short> v)
+        {
+            short[] ar = v.AsArray();
+            for (int i = 0; i < ar.Length; i++)
+            {
+                ar[i] =(short) (ar[i] - 50);
+            }
+            return Vector<short>.Build.Dense(ar);
+        }
+
+        public static short lStep(short s)
+        {
+            if (s > 100)
+            {
+                return 100;
+            }
+            else if (s < 0)
+            {
+                return 0;
+            }
+            return s;
+        }
+
+        public static Vector<short> lStep(Vector<short> v)
+        {
+            short[] ar = v.AsArray();
+            for (int i = 0; i < ar.Length; i++)
+            {
+                ar[i] = lStep(ar[i]);
+            }
+            return Vector<short>.Build.Dense(ar);
+        }
+
         /// <summary>
         /// Simple hard limit transfer function for a single variable
         /// </summary>
         /// <param name="f"></param>
         /// <returns></returns>
-        public static float step(float f)
+        public static short step(short f)
         {
             if (f > 0)
             {
@@ -30,9 +63,9 @@ namespace NeuralLoop.Network
         /// </summary>
         /// <param name="f"></param>
         /// <returns></returns>
-        public static float lsim(float f)
+        public static short lsim(short f)
         {
-            return 1 / (1 + (float)Math.Exp(-f));
+            return (short) (1 / (1 + (short)Math.Exp(-f)));
         }
 
         /// <summary>
@@ -55,9 +88,9 @@ namespace NeuralLoop.Network
         /// </summary>
         /// <param name="v"></param>
         /// <returns></returns>
-        public static Vector<float> lsim(Vector<float> v)
+        public static Vector<short> lsim(Vector<short> v)
         {
-            return (Vector<float>.Exp(-v) + Vector<float>.Build.Dense(v.Count, 1)).DivideByThis(1);
+            return (Vector<short>.Exp(-v) + Vector<short>.Build.Dense(v.Count, 1)).DivideByThis(1);
         }
 
         /// <summary>
@@ -65,9 +98,9 @@ namespace NeuralLoop.Network
         /// </summary>
         /// <param name="v"></param>
         /// <returns></returns>
-        public static Vector<float> diffSimp(Vector<float> v)
+        public static Vector<short> diffSimp(Vector<short> v)
         {
-            return (Vector<float>.Build.Dense(v.Count, 1) - v).PointwiseMultiply(v);
+            return (Vector<short>.Build.Dense(v.Count, 1) - v).PointwiseMultiply(v);
         }
 
     }
