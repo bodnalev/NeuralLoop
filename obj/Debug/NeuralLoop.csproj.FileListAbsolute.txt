@@ -7,3 +7,4 @@ D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\MathNet.Numerics.dll
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\bin\Debug\MathNet.Numerics.xml
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.exe
 D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.pdb
+D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\obj\Debug\NeuralLoop.csprojResolveAssemblyReference.cache
