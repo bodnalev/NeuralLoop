@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Windows.Forms;
 
 namespace NeuralLoop
 {
@@ -6,10 +7,9 @@ namespace NeuralLoop
     {
         static void Main(string[] args)
         {
-            Translator tr = new Translator();
-            tr.ReadWordList();
-
-            Console.Read();
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Conversation());
         }
     }
 }
