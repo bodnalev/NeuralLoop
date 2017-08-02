@@ -87,7 +87,7 @@ namespace NeuralLoop.Network
         public NeuralNetwork(int[] neuronNumbers) : this(neuronNumbers, null) {}
 
 
-        public Vector<short> UnsupervisedLoop(Vector<short> input, short alpha)
+        public Vector<short> UnsupervisedLoop(Vector<short> input, float alpha)
         {
             int M = matrices.Length;
 
@@ -100,13 +100,15 @@ namespace NeuralLoop.Network
             for (int i = 0; i < M; i++)
             {
                 midValues[i] = input.Clone();
-                input = VectorFunction.lStep((matrices[i] * input) / 100) + biases[i];
+                input = VectorFunction.lStep((matrices[i] * input) / 100 + biases[i]);
             }
             midValues[M] = input.Clone();
 
             for (int i = 0; i < matrices.Length; i++)
             {
-                matrices[i] = matrices[i] + alpha * (Vector<short>.OuterProduct(VectorFunction.Rem50(midValues[i]), VectorFunction.Rem50(midValues[i + 1])) / 100);
+                matrices[i] = matrices[i] +((short)alpha) * 
+                    (Vector<short>.OuterProduct(VectorFunction.RemValue(midValues[i], 20), 
+                    VectorFunction.RemValue(midValues[i + 1], 20)) / 100);
             }
 
             return input;
@@ -166,7 +168,7 @@ namespace NeuralLoop.Network
         {
             for (int i = 0; i < matrices.Length; i++)
             {
-                input = VectorFunction.lStep((matrices[i] * input)/100) + biases[i];
+                input = VectorFunction.lStep((matrices[i] * input)/100 + biases[i]);
             }
             return input;
         }

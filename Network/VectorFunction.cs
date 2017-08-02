@@ -11,12 +11,12 @@ namespace NeuralLoop.Network
     class VectorFunction
     {
 
-        public static Vector<short> Rem50(Vector<short> v)
+        public static Vector<short> RemValue(Vector<short> v, short value)
         {
             short[] ar = v.AsArray();
             for (int i = 0; i < ar.Length; i++)
             {
-                ar[i] =(short) (ar[i] - 50);
+                ar[i] =(short) (ar[i] - value);
             }
             return Vector<short>.Build.Dense(ar);
         }

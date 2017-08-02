@@ -74,7 +74,6 @@
     <Compile Include="Conversation.Designer.cs">
       <DependentUpon>Conversation.cs</DependentUpon>
     </Compile>
-    <Compile Include="ConversationManager.cs" />
     <Compile Include="Network\NeuralNetwork.cs" />
     <Compile Include="Network\VectorFunction.cs" />
     <Compile Include="Program.cs" />

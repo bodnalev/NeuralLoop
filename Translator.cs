@@ -18,7 +18,6 @@ namespace NeuralLoop
         /// Stores the nouns (they are special as they are used in the definitions)
         /// </summary>
         public static Dictionary<string, BinaryWord> nouns;
-        
 
         /// <summary>
         /// Loads the words from the dictionary.txt
@@ -91,6 +90,18 @@ namespace NeuralLoop
                         }
                     }
                 }
+            }
+        }
+
+        public void AddWord(string word)
+        {
+            using (StreamWriter writer = new StreamWriter(@"D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\dictionary.txt", true))
+            {
+                word = word.ToLower();
+                BinaryWord bw = new BinaryWord(word, BinaryWord.WordClass.DeterConjPrepPronInterjPuncUnkn, null);
+                collection.Add(word,bw);
+                writer.WriteLine(bw.ToString());
+                writer.Flush();
             }
         }
 
@@ -258,13 +269,13 @@ namespace NeuralLoop
             BinaryWord bw = new BinaryWord(word, BinaryWord.FindClass(classes), defWord);
             return bw;
         }
-
+        
         /// <summary>
         /// Checks spelling mistakes
         /// </summary>
         /// <param name="word">The word we want to check</param>
         /// <returns>The correct word, null if we can not find any</returns>
-        public string SpellChecker(string word)
+        public static string SpellChecker(string word)
         {
             try
             {
@@ -320,7 +331,7 @@ namespace NeuralLoop
         /// </summary>
         /// <param name="word">The original word</param>
         /// <returns>The list returned</returns>
-        public List<string> Synonyms(string word)
+        public static List<string> Synonyms(string word)
         {
             List<string> res = new List<string>();
 
@@ -355,6 +366,70 @@ namespace NeuralLoop
             }
             return res;
         }
-        
+
+        public static string StringFromArray(bool[] arr)
+        {
+            BinaryWord match20 = null, match18 = null, match16 = null, match14 = null;
+            foreach (KeyValuePair<string, BinaryWord> entry in collection)
+            {
+                if (match20 == null && EqualArrays(arr, entry.Value.complete, 20))
+                {
+                    match20 = entry.Value;
+                }
+                if (match18 == null && EqualArrays(arr, entry.Value.complete, 18))
+                {
+                    match18 = entry.Value;
+                }
+                if (match16 == null && EqualArrays(arr, entry.Value.complete, 16))
+                {
+                    match16 = entry.Value;
+                }
+                if (match14 == null && EqualArrays(arr, entry.Value.complete, 14))
+                {
+                    match14 = entry.Value;
+                }
+            }
+            if (match20 != null)
+            {
+                return match20.word;
+            }
+            if (match18 != null)
+            {
+                return match18.word;
+            }
+            if (match16 != null)
+            {
+                return match16.word;
+            }
+            if (match14 != null)
+            {
+                return match14.word;
+            }
+            return null;
+        }
+
+        public static bool[] ArrayFromString(string word)
+        {
+            word = SpellChecker(word);
+            BinaryWord bw = null;
+            if (collection.TryGetValue(word, out bw))
+            {
+                return bw.complete;
+            }
+            return null;
+        }
+
+        private static bool EqualArrays(bool[] fir, bool[] sec, int indecies)
+        {
+            for (int i = 1; i <= indecies && i <= fir.Length && i <= sec.Length; i++)
+            {
+                if (fir[fir.Length - i] != sec[sec.Length - i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
     }
 }

@@ -82,7 +82,6 @@
             this.Controls.Add(this.layoutPanel);
             this.Name = "Conversation";
             this.Text = "Messenger";
-            this.Load += new System.EventHandler(this.Messenger_Load);
             this.layoutPanel.ResumeLayout(false);
             this.layoutPanel.PerformLayout();
             this.ResumeLayout(false);
