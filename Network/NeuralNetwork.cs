@@ -1,6 +1,7 @@
 ﻿using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.Distributions;
+
 using System.Collections.Generic;
 
 namespace NeuralLoop.Network
@@ -17,11 +18,11 @@ namespace NeuralLoop.Network
         /// <summary>
         /// Stores the matrices for each layer
         /// </summary>
-        public Matrix<short>[] matrices;
+        public Matrix<float>[] matrices;
         /// <summary>
         /// Stores the biases for each layer
         /// </summary>
-        public Vector<short>[] biases;
+        public Vector<float>[] biases;
 
         /// <summary>
         /// Network parameters for randomizing the values
@@ -44,7 +45,7 @@ namespace NeuralLoop.Network
         /// <param name="isLin">The array storing wether each layer uses the linear transfer function</param>
         public NeuralNetwork(int[] neuronNumbers, int[] expectedSynapses)
         {
-            ContinuousUniform ran = new ContinuousUniform(randomMin*100, randomMax*100);
+            ContinuousUniform ran = new ContinuousUniform(randomMin, randomMax);
             Bernoulli ber;
             this.neuronNumbers = neuronNumbers;
             this.expectedSynapses = expectedSynapses;
@@ -63,19 +64,19 @@ namespace NeuralLoop.Network
                 }
             }
 
-            matrices = new Matrix<short>[neuronNumbers.Length - 1];
-            biases = new Vector<short>[neuronNumbers.Length - 1];
+            matrices = new Matrix<float>[neuronNumbers.Length - 1];
+            biases = new Vector<float>[neuronNumbers.Length - 1];
 
             for (int i = 0; i < neuronNumbers.Length - 1; i++)
             {
-                matrices[i] = Matrix<short>.Build.Random(neuronNumbers[i + 1], neuronNumbers[i], ran);
+                matrices[i] = Matrix<float>.Build.Random(neuronNumbers[i + 1], neuronNumbers[i], ran);
                 if (synapseProbability[i] < 1)
                 {
                     ber = new Bernoulli(synapseProbability[i]);
                     matrices[i].CoerceZero(x => ber.Sample()==0 );
                 }
 
-                biases[i] = Vector<short>.Build.Random(neuronNumbers[i + 1], ran);
+                biases[i] = Vector<float>.Build.Dense(neuronNumbers[i + 1], -.2f);
             }
         }
         
@@ -87,7 +88,7 @@ namespace NeuralLoop.Network
         public NeuralNetwork(int[] neuronNumbers) : this(neuronNumbers, null) {}
 
 
-        public Vector<short> UnsupervisedLoop(Vector<short> input, float alpha)
+        public Vector<float> UnsupervisedLoop(Vector<float> input, float alpha)
         {
             int M = matrices.Length;
 
@@ -95,20 +96,20 @@ namespace NeuralLoop.Network
              * Calculate the mid values, the response of each layer between the first and last
              * to use this in the training
              */
-            Vector<short>[] midValues = new Vector<short>[M + 1];
+            Vector<float>[] midValues = new Vector<float>[M + 1];
 
             for (int i = 0; i < M; i++)
             {
                 midValues[i] = input.Clone();
-                input = VectorFunction.lStep((matrices[i] * input) / 100 + biases[i]);
+                input = VectorFunction.lStep((matrices[i] * input) + biases[i]);
             }
             midValues[M] = input.Clone();
 
             for (int i = 0; i < matrices.Length; i++)
             {
-                matrices[i] = matrices[i] +((short)alpha) * 
-                    (Vector<short>.OuterProduct(VectorFunction.RemValue(midValues[i], 20), 
-                    VectorFunction.RemValue(midValues[i + 1], 20)) / 100);
+                matrices[i] = matrices[i] +alpha * 
+                    (Vector<float>.OuterProduct(VectorFunction.RemValue(midValues[i], 20), 
+                    VectorFunction.RemValue(midValues[i + 1], 20)));
             }
 
             return input;
@@ -164,7 +165,7 @@ namespace NeuralLoop.Network
         /// </summary>
         /// <param name="input">The given input</param>
         /// <returns></returns>
-        public Vector<short> Response(Vector<short> input)
+        public Vector<float> Response(Vector<float> input)
         {
             for (int i = 0; i < matrices.Length; i++)
             {
@@ -173,33 +174,36 @@ namespace NeuralLoop.Network
             return input;
         }
 
+
+
+
         /// <summary>
         /// Extends the network's neuron numbers at a given layer.
         /// </summary>
         /// <param name="extra">The extra neurons</param>
         /// <param name="atLayer">The layer to extend</param>
         /// <param name="defValue">The default value to fill</param>
-        public void ExtendAt(int extra, int atLayer, short defValue)
+        public void ExtendAt(int extra, int atLayer, float defValue)
         {
             ContinuousUniform rand = new ContinuousUniform(randomMin, randomMax);
             neuronNumbers[atLayer] += extra;
 
-            Matrix<short> newMatrix;
+            Matrix<float> newMatrix;
 
             if (atLayer > 0)
             {
-                Vector<short> newBias = Vector<short>.Build.Random(neuronNumbers[atLayer], rand);
+                Vector<float> newBias = Vector<float>.Build.Random(neuronNumbers[atLayer], rand);
                 newBias.SetSubVector(0, biases[atLayer - 1].Count, biases[atLayer - 1]);
                 biases[atLayer - 1] = newBias;
 
-                newMatrix = Matrix<short>.Build.Random(neuronNumbers[atLayer - 1], neuronNumbers[atLayer], rand);
+                newMatrix = Matrix<float>.Build.Random(neuronNumbers[atLayer - 1], neuronNumbers[atLayer], rand);
                 newMatrix.SetSubMatrix(0, 0, matrices[atLayer - 1]);
                 matrices[atLayer - 1] = newMatrix;
             }
 
             if (atLayer < matrices.Length)
             {
-                newMatrix = Matrix<short>.Build.Random(neuronNumbers[atLayer], neuronNumbers[atLayer + 1], rand);
+                newMatrix = Matrix<float>.Build.Random(neuronNumbers[atLayer], neuronNumbers[atLayer + 1], rand);
                 newMatrix.SetSubMatrix(0, 0, matrices[atLayer]);
                 matrices[atLayer] = newMatrix;
             }

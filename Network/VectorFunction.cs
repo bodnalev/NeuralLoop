@@ -11,21 +11,21 @@ namespace NeuralLoop.Network
     class VectorFunction
     {
 
-        public static Vector<short> RemValue(Vector<short> v, short value)
+        public static Vector<float> RemValue(Vector<float> v, float value)
         {
-            short[] ar = v.AsArray();
+            float[] ar = v.AsArray();
             for (int i = 0; i < ar.Length; i++)
             {
-                ar[i] =(short) (ar[i] - value);
+                ar[i] =ar[i] - value;
             }
-            return Vector<short>.Build.Dense(ar);
+            return Vector<float>.Build.Dense(ar);
         }
 
-        public static short lStep(short s)
+        public static float lStep(float s)
         {
-            if (s > 100)
+            if (s > 1)
             {
-                return 100;
+                return 1;
             }
             else if (s < 0)
             {
@@ -34,14 +34,14 @@ namespace NeuralLoop.Network
             return s;
         }
 
-        public static Vector<short> lStep(Vector<short> v)
+        public static Vector<float> lStep(Vector<float> v)
         {
-            short[] ar = v.AsArray();
+            float[] ar = v.AsArray();
             for (int i = 0; i < ar.Length; i++)
             {
                 ar[i] = lStep(ar[i]);
             }
-            return Vector<short>.Build.Dense(ar);
+            return Vector<float>.Build.Dense(ar);
         }
 
         /// <summary>
