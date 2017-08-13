@@ -53,21 +53,21 @@
             this.layoutPanel.Name = "layoutPanel";
             this.layoutPanel.RowCount = 3;
             this.layoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
-            this.layoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.layoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.layoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 66F));
-            this.layoutPanel.Size = new System.Drawing.Size(638, 362);
+            this.layoutPanel.Size = new System.Drawing.Size(751, 369);
             this.layoutPanel.TabIndex = 0;
             // 
             // inputBox
             // 
-            this.inputBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.inputBox.Location = new System.Drawing.Point(3, 341);
+            this.inputBox.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.inputBox.Location = new System.Drawing.Point(3, 306);
             this.inputBox.Multiline = true;
             this.inputBox.Name = "inputBox";
             this.inputBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.inputBox.Size = new System.Drawing.Size(632, 60);
+            this.inputBox.Size = new System.Drawing.Size(745, 60);
             this.inputBox.TabIndex = 0;
-            this.inputBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.inputBox_KeyDown);
+            this.inputBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.inputBox_KeyUp);
             // 
             // conversationBox
             // 
@@ -80,7 +80,7 @@
             this.conversationBox.Name = "conversationBox";
             this.conversationBox.ReadOnly = true;
             this.conversationBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.conversationBox.Size = new System.Drawing.Size(632, 306);
+            this.conversationBox.Size = new System.Drawing.Size(745, 271);
             this.conversationBox.TabIndex = 1;
             // 
             // topPanel
@@ -94,7 +94,7 @@
             this.topPanel.Location = new System.Drawing.Point(0, 0);
             this.topPanel.Margin = new System.Windows.Forms.Padding(0);
             this.topPanel.Name = "topPanel";
-            this.topPanel.Size = new System.Drawing.Size(638, 26);
+            this.topPanel.Size = new System.Drawing.Size(751, 26);
             this.topPanel.TabIndex = 2;
             // 
             // runButton
@@ -104,12 +104,13 @@
             this.runButton.Name = "runButton";
             this.runButton.Size = new System.Drawing.Size(75, 23);
             this.runButton.TabIndex = 0;
-            this.runButton.Text = "Run";
+            this.runButton.Text = "Load";
             this.runButton.UseVisualStyleBackColor = true;
             this.runButton.Click += new System.EventHandler(this.runButton_Click);
             // 
             // cancelButton
             // 
+            this.cancelButton.Enabled = false;
             this.cancelButton.Location = new System.Drawing.Point(84, 2);
             this.cancelButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.cancelButton.Name = "cancelButton";
@@ -155,11 +156,10 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(638, 362);
+            this.ClientSize = new System.Drawing.Size(751, 369);
             this.Controls.Add(this.layoutPanel);
             this.Name = "Conversation";
             this.Text = "Messenger";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Conversation_FormClosing);
             this.layoutPanel.ResumeLayout(false);
             this.layoutPanel.PerformLayout();
             this.topPanel.ResumeLayout(false);

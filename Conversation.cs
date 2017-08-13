@@ -5,15 +5,18 @@ using System.Windows.Forms;
 using NeuralLoop.Network;
 using MathNet.Numerics.LinearAlgebra;
 using System.Diagnostics;
+using System.IO;
+using NeuralLoop.Language;
 
 namespace NeuralLoop
 {
     public partial class Conversation : Form
     {
 
-        private BackgroundWorker bw = new BackgroundWorker();
+        private BackgroundWorker networkWorker = new BackgroundWorker();
+        private BackgroundWorker loadingWorker = new BackgroundWorker();
         private NeuralNetwork nn;
-        private Vector<float> nextInput;
+        private Vector<float> nextInput = null;
         
         private List<KeyValuePair<string, bool>> inputSentenceQueue, responseBuffer, inputBuffer, convHistory;
         
@@ -21,30 +24,44 @@ namespace NeuralLoop
 
         private bool running = false;
 
+        private bool loaded = false;
+
         //specialChars dec: 33-64
 
         public Conversation()
         {
             InitializeComponent();
+
+
             inputSentenceQueue = new List<KeyValuePair<string, bool>>();
             responseBuffer = new List<KeyValuePair<string, bool>>();
             convHistory = new List<KeyValuePair<string, bool>>();
             inputBuffer = new List<KeyValuePair<string, bool>>();
             
-            nn = new NeuralNetwork(new int[] { 1000, 1000 }, new int[] { 400 });
-            bw.DoWork += bw_DoWork;
-            bw.RunWorkerCompleted += bw_Completed;
+            nn = new NeuralNetwork(3000, 3000);
 
-            nextInput = ProcessInput(Vector<short>.Build.Dense(10000));
 
+            networkWorker.DoWork += networkWorker_DoWork;
+            networkWorker.RunWorkerCompleted += networkWorker_Completed;
+
+            loadingWorker.DoWork += loadingWorker_DoWork;
+            loadingWorker.RunWorkerCompleted += loadingWorker_Completed;
+            
             sw = new Stopwatch();
+
+            saveButton.Enabled = false;
         }
 
-        private void inputBox_KeyDown(object sender, KeyEventArgs e)
+        private void inputBox_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                string inS = inputBox.Text;
+                if (!loaded)
+                {
+                    return;
+                }
+
+                string inS = inputBox.Text.ToLower();
                 List<string> sentence = new List<string>() {inS}, temp;
 
                 //separate the common special characters (,.?!&@ etc)
@@ -119,22 +136,23 @@ namespace NeuralLoop
             }
         }
 
-        private void bw_DoWork(object sender, DoWorkEventArgs e)
+        private void networkWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
             Vector<float> input =(Vector<float>) e.Argument;
 
-            Vector<float> result = nn.UnsupervisedLoop(input, 1);
+            Vector<float> result = nn.SingleUnsupervisedLoop(input, 1);
 
             e.Result = result;
         }
 
-        private void bw_Completed(object sender, RunWorkerCompletedEventArgs e)
+        private void networkWorker_Completed(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Error != null)
             {
                 nextInput = ProcessInput(nextInput);
+                Console.WriteLine("ERROR!");
             }
             else
             {
@@ -142,9 +160,6 @@ namespace NeuralLoop
                 if (canGetResponse.Checked)
                 {
                     ShowResMessage(res);
-                }
-                else if (responseBuffer.Count > 0)
-                {
                     convHistory.AddRange(responseBuffer);
                     responseBuffer.Clear();
                 }
@@ -153,10 +168,23 @@ namespace NeuralLoop
 
             if (running)
             {
-                infoBox.Text = "Running at " + (1000f / sw.ElapsedMilliseconds) + "Ups";
+                infoBox.Text = "Running at " + (int)(1000f / sw.ElapsedMilliseconds) + "Ups";
                 sw.Restart();
-                bw.RunWorkerAsync(nextInput);
+                networkWorker.RunWorkerAsync(nextInput);
             }
+        }
+
+        private void loadingWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            Translator.LoadDictionaryVoid();
+        }
+        
+        private void loadingWorker_Completed(object sender, RunWorkerCompletedEventArgs e)
+        {
+            infoBox.Text = "Ready";
+            runButton.Text = "Run";
+            runButton.Enabled = true;
+            loaded = true;
         }
 
         private Vector<float> ProcessInput(Vector<float> original)
@@ -176,12 +204,20 @@ namespace NeuralLoop
 
                 //set vector
                 bool[] values = Translator.ArrayFromString(nextItem.Key);
-                float[] ar = new float[40];
-                for (int i = 0; i < 20; i++)
+                if (values != null)
                 {
-                    ar[nextItem.Value ? i : i + 20] =(values[i] ? 1f : 0f);
+                    float[] ar = new float[40];
+                    for (int i = 0; i < 20; i++)
+                    {
+                        ar[nextItem.Value ? i : i + 20] = (values[i] ? 1f : 0f);
+                    }
+                    original.SetSubVector(0, 40, Vector<float>.Build.Dense(ar));
                 }
-                original.SetSubVector(0, 40, Vector<float>.Build.Dense(ar));
+                else
+                {
+                    original.SetSubVector(0, 40, Vector<float>.Build.Dense(40));
+                }
+                
             }
             else
             {
@@ -194,9 +230,21 @@ namespace NeuralLoop
 
         private void runButton_Click(object sender, EventArgs e)
         {
-            running = true;
-            sw.Start();
-            bw.RunWorkerAsync(nextInput);
+            if (!loaded)
+            {
+                runButton.Enabled = false;
+                infoBox.Text = "Loading...";
+                loadingWorker.RunWorkerAsync();
+            }
+            else
+            {
+                running = true;
+                runButton.Enabled = false;
+                cancelButton.Enabled = true;
+                sw.Start();
+                networkWorker.RunWorkerAsync(nextInput);
+                saveButton.Enabled = false;
+            }
         }
 
         private void cancelButton_Click(object sender, EventArgs e)
@@ -204,19 +252,30 @@ namespace NeuralLoop
             running = false;
             sw.Reset();
             infoBox.Text = "Paused";
+            runButton.Enabled = true;
             UpdateConversation();
-        }
-
-        private void Conversation_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            bw.CancelAsync();
-            bw.Dispose();
+            saveButton.Enabled = true;
         }
 
         //todo
         private void saveButton_Click(object sender, EventArgs e)
         {
-            //save matrix
+            runButton.Enabled = false;
+            cancelButton.Enabled = false;
+            using (StreamWriter sw = new StreamWriter(@"D:\Edu\Programming\ML\NeuralLoop\NeuralLoop\matrixSave.txt", false))
+            {
+                Matrix<float> mat = nn.singleMatrix;
+                for (int i = 0; i < mat.RowCount; i++)
+                {
+                    Vector<float> vec = mat.Row(i);
+                    for (int j = 0; j < vec.Count; j++)
+                    {
+                        sw.Write(vec.At(j) + "\t");
+                    }
+                    sw.WriteLine();
+                }
+            }
+            runButton.Enabled = true;
         }
 
         private void ShowResMessage(Vector<float> res)
@@ -225,7 +284,7 @@ namespace NeuralLoop
             bool[] comp = new bool[20];
             for (int i = 0; i < 20; i++)
             {
-                comp[i] = (resSub.At(i) >= 50);
+                comp[i] = (resSub.At(i) >= .5f);
             }
             string s = Translator.StringFromArray(comp);
 
@@ -252,11 +311,14 @@ namespace NeuralLoop
 
             bool human = convHistory[0].Value;
 
+            s = (human ? "USER: " : "PROGRAM: ");
+
             foreach (KeyValuePair<string, bool> entry in convHistory)
             {
                 if (entry.Value != human)
                 {
-                    s += "\n"+(entry.Value ? "USER: " : "PROGRAM: ");
+                    s += "\r\n"+(entry.Value ? "USER: " : "PROGRAM: ");
+                    human = !human;
                 }
                 s += entry.Key + " ";
             }

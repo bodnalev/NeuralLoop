@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{F19A1835-7D64-41E3-91DD-FE72EBE9C076}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NeuralLoop</RootNamespace>
     <AssemblyName>NeuralLoop</AssemblyName>
@@ -71,28 +71,46 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BinaryWord.cs" />
+    <Compile Include="Language\BinaryWord.cs" />
     <Compile Include="Conversation.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Conversation.Designer.cs">
       <DependentUpon>Conversation.cs</DependentUpon>
     </Compile>
+    <Compile Include="Mathematics\MMVerifier\Axiom.cs" />
+    <Compile Include="Mathematics\MMVerifier\Comment.cs" />
+    <Compile Include="Mathematics\MMVerifier\Distinct.cs" />
+    <Compile Include="Mathematics\MMVerifier\EHyp.cs" />
+    <Compile Include="Mathematics\MMVerifier\Extension.cs" />
+    <Compile Include="Mathematics\MMVerifier\FHyp.cs" />
+    <Compile Include="Mathematics\MMVerifier\Frame.cs" />
+    <Compile Include="Mathematics\MMVerifier\FrameStack.cs" />
+    <Compile Include="Mathematics\MMVerifier\Hypothesis.cs" />
+    <Compile Include="Mathematics\MMVerifier\MMFile.cs" />
+    <Compile Include="Mathematics\MMVerifier\MMProver.cs" />
+    <Compile Include="Mathematics\MMVerifier\MMStatement.cs" />
+    <Compile Include="Mathematics\MMVerifier\SymbolString.cs" />
+    <Compile Include="Mathematics\MMVerifier\Theorem.cs" />
+    <Compile Include="Mathematics\MMVerifier\Verifier.cs" />
+    <Compile Include="Mathematics\MMVerifier\ZIStatement.cs" />
+    <Compile Include="Mathematics\MMVerifier\ZRStatement.cs" />
     <Compile Include="Network\NeuralNetwork.cs" />
     <Compile Include="Network\VectorFunction.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Translator.cs" />
+    <Compile Include="Language\Translator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="dictionary.txt">
+    <None Include="Language\dictionary.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="words.txt">
+    <Content Include="Language\matrixSave.txt" />
+    <Content Include="Language\words.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -113,6 +131,7 @@
       <DependentUpon>Conversation.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

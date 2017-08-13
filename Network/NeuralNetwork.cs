@@ -2,8 +2,6 @@
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.Distributions;
 
-using System.Collections.Generic;
-
 namespace NeuralLoop.Network
 {
     /// <summary>
@@ -11,6 +9,12 @@ namespace NeuralLoop.Network
     /// </summary>
     class NeuralNetwork
     {
+        public Matrix<float> singleMatrix;
+        public int singleNeuronNumber;
+        public Vector<float> singleBiase;
+        public int singleExpect;
+        public double singleProb;
+
         /// <summary>
         /// Stores the neuron numbers in the different layers including the input at [0] and the output at [Lenght-1]
         /// </summary>
@@ -19,6 +23,7 @@ namespace NeuralLoop.Network
         /// Stores the matrices for each layer
         /// </summary>
         public Matrix<float>[] matrices;
+        
         /// <summary>
         /// Stores the biases for each layer
         /// </summary>
@@ -27,7 +32,7 @@ namespace NeuralLoop.Network
         /// <summary>
         /// Network parameters for randomizing the values
         /// </summary>
-        public double randomMin = -0.1, randomMax = 0.4;
+        public double randomMin = 0, randomMax = 1;
 
         /// <summary>
         /// Reducing the synapse numbers by setting their expected value
@@ -35,6 +40,46 @@ namespace NeuralLoop.Network
         public int[] expectedSynapses;
         private double[] synapseProbability;
 
+
+        public NeuralNetwork(int singleNeuron, int singleExpected)
+        {
+            ContinuousUniform ran = new ContinuousUniform(randomMin, randomMax);
+            Bernoulli ber;
+            this.singleNeuronNumber = singleNeuron;
+            this.singleExpect = singleExpected;
+
+            //setting up the synapse probability
+            this.singleProb = (double)singleExpect / singleNeuron;
+            if (singleProb > 1)
+            {
+                singleProb = 1;
+            }
+
+            singleMatrix = Matrix<float>.Build.Random(singleNeuron, singleNeuron, ran);
+            if (singleProb < 1)
+            {
+                ber = new Bernoulli(singleProb);
+                singleMatrix.CoerceZero(x => ber.Sample() == 0);
+            }
+
+            singleBiase = Vector<float>.Build.Dense(singleNeuron, 0);
+        }
+
+        public Vector<float> SingleUnsupervisedLoop(Vector<float> input, float alpha)
+        {
+            if (input == null)
+            {
+                ContinuousUniform ran = new ContinuousUniform(randomMin, randomMax);
+                input = Vector<float>.Build.Random(singleNeuronNumber, ran);
+            }
+
+            Vector<float> outPut = VectorFunction.lStep((singleMatrix * input) + singleBiase);
+
+            singleMatrix = singleMatrix + alpha * (Vector<float>.OuterProduct(input,
+                    outPut));
+
+            return input;
+        }
 
         /// <summary>
         /// Constructs the network based on neuronNumbers,
@@ -159,7 +204,6 @@ namespace NeuralLoop.Network
         }*/
 
         
-        
         /// <summary>
         /// Calculates the response of the network for a given input
         /// </summary>
@@ -173,9 +217,7 @@ namespace NeuralLoop.Network
             }
             return input;
         }
-
-
-
+        
 
         /// <summary>
         /// Extends the network's neuron numbers at a given layer.
